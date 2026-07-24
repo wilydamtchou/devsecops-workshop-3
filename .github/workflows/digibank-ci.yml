@@ -1,4 +1,4 @@
-name: DigiBank CI SAST Pipeline
+name: DigiBank CI SAST/DAST Pipeline
 
 on:
   push:
