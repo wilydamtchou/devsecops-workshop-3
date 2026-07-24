@@ -19,6 +19,7 @@ env:
   SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
   SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
   NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+  SPRING_PROFILES_ACTIVE : qa
 
 # ---------------------------------------------------------
 # 1) BUILD JOB (must run first)
@@ -294,3 +295,16 @@ jobs:
           -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }}
           -Dsonar.qualitygate.wait=true
           -Dsonar.qualitygate.timeout=300
+
+  # ---------------------------------------------------------
+  # 5) DOCKER (only if SonarQube passes)
+  # ---------------------------------------------------------
+  docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: sonar
+    if: needs.sonar.result == 'success'
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t digibank-app:ci .

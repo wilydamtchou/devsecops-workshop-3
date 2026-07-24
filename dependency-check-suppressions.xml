@@ -180,14 +180,23 @@
         <cve>CVE-2026-40977</cve>
     </suppress>
 
-    <suppress until="2026-10-01Z">
-        <notes><![CDATA[...]]></notes>
-        <packageUrl regex="true">(?i)^pkg:javascript/dompurify@.*$</packageUrl>
-        <cve>CVE-2026-41238</cve>
-        <cve>CVE-2026-41239</cve>
-        <cve>CVE-2026-49458</cve>
-        <cve>CVE-2026-49459</cve>
-        <cve>CVE-2026-49978</cve>
+    <!-- Swagger UI 5.32.7 embarque DOMPurify 3.4.11 -->
+    <suppress until="2027-01-01Z">
+        <notes><![CDATA[
+    Suppression temporaire de l'alerte DOMPurify embarquée dans swagger-ui-5.32.7.
+    Vulnérabilité :
+    DOMPurify: CUSTOM_ELEMENT_HANDLING bypasses afterSanitizeElements
+    for allowed custom elements.
+    Détection via :
+    - swagger-ui-bundle.js
+    - swagger-ui-es-bundle.js
+    Package :
+    pkg:javascript/DOMPurify@3.4.11
+    ]]></notes>
+        <packageUrl regex="true">(?i)^pkg:javascript/DOMPurify@3\.4\.11$</packageUrl>
+        <vulnerabilityName regex="true">
+            .*CUSTOM_ELEMENT_HANDLING.*
+        </vulnerabilityName>
     </suppress>
 
 </suppressions>
