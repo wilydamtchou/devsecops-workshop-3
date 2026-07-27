@@ -191,6 +191,9 @@ jobs:
         run: |
           mvn \
             -B \
+            install \
+            -DskipTests \
+            -Dgpg.skip=true \
             org.owasp:dependency-check-maven:aggregate \
             -DnvdApiKey=${{ secrets.NVD_API_KEY }}
       - name: Upload Dependency Report
@@ -248,6 +251,7 @@ jobs:
         run: |
           mvn \
             -B \
+            compile \
             pmd:pmd
       - name: Upload PMD Report
         if: always()
@@ -275,6 +279,7 @@ jobs:
         run: |
           mvn \
             -B \
+            compile \
             checkstyle:checkstyle
 
       - name: Upload Checkstyle Report
