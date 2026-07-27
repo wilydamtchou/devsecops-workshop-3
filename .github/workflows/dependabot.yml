@@ -1,0 +1,66 @@
+version: 2
+
+updates:
+
+  # ---------------------------------------------------------
+  # Dépendances Maven (pom.xml)
+  # ---------------------------------------------------------
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "maven"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework*"
+      testing:
+        patterns:
+          - "org.junit*"
+          - "io.cucumber*"
+          - "org.mockito*"
+
+  # ---------------------------------------------------------
+  # Dockerfile
+  # ---------------------------------------------------------
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  # ---------------------------------------------------------
+  # Actions utilisées dans les workflows (.github/workflows)
+  # ---------------------------------------------------------
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
