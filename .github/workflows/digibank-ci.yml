@@ -62,8 +62,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: digibank-build
-          path: |
-            **/target/*.jar
+          path: digibank-web/target/digibank-web-*.jar
 
   unit-tests:
     name: Unit Tests
@@ -389,7 +388,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: digibank-build
-          path: digibank-web/target
       - name: Construire l'image Docker
         run: |
           docker build -t digibank-app:ci .
