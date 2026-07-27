@@ -500,8 +500,8 @@ jobs:
           npm install -g newman newman-reporter-htmlextra
       - name: Exécuter la collection Newman
         run: |
-          newman run postman/DigiBank.postman_collection.json \
-            --environment postman/DigiBank.postman_environment.json \
+          newman run dast/postman/DigiBank-DAST-Collection.postman_collection.json \
+            --environment dast/postman/DigiBank-Local.postman_environment.json \
             --reporters cli,htmlextra,json \
             --reporter-htmlextra-export newman-report.html \
             --reporter-json-export newman-report.json
