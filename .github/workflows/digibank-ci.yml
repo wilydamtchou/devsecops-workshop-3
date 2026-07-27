@@ -179,13 +179,16 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: maven
+      - name: Get current week for cache key
+        id: date
+        run: echo "date=$(date +'%Y-W%U')" >> "$GITHUB_OUTPUT"
       - name: Cache Dependency-Check Database
         uses: actions/cache@v4
         with:
-          path: ~/.dependency-check
-          key: dependency-check-${{ runner.os }}
+          path: odc-data
+          key: dependency-check-db-${{ runner.os }}-${{ steps.date.outputs.date }}
           restore-keys: |
-            dependency-check-
+            dependency-check-db-${{ runner.os }}-
       - name: Run Dependency Check
         run: |
           mvn \
