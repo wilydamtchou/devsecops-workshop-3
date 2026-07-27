@@ -2,7 +2,7 @@ FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
-COPY digibank-web/target/digibank-web-1.0.0-SNAPSHOT.jar app.jar
+COPY digibank-web/target/*.jar app.jar
 
 EXPOSE 8080
 
