@@ -1,10 +1,17 @@
-name: DigiBank CI SAST/DAST Pipeline
+name: DigiBank Complete DevSecOps CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches:
+      - main
+      - master
+      - develop
+
   pull_request:
-    branches: [ main, master, develop ]
+    branches:
+      - main
+      - master
+      - develop
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,55 +26,65 @@ env:
   SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
   SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
   NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-  SPRING_PROFILES_ACTIVE : qa
+  SPRING_PROFILES_ACTIVE: qa
 
-# ---------------------------------------------------------
-# 1) BUILD JOB (must run first)
-# ---------------------------------------------------------
 jobs:
+
+  ###############################################################
+  # PARTIE 1 — BUILD + TESTS + COVERAGE
+  ###############################################################
+
   build:
-    name: Build
+    name: Build DigiBank
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
-
-      - name: Set up Java 17
+      - name: Setup Temurin JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
           cache: maven
-
-      - name: Build & package (skip tests)
-        run: mvn -B clean package -DskipTests
-
-      - name: Build Docker image
-        run: docker build -t digibank-app:ci .
-
-  # ---------------------------------------------------------
-  # 2) Tests & Coverage (all depend on build)
-  # ---------------------------------------------------------
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+      - name: Build project
+        run: |
+          mvn \
+            -B \
+            clean \
+            package \
+            -DskipTests
+      - name: Upload compiled application
+        uses: actions/upload-artifact@v4
+        with:
+          name: digibank-build
+          path: |
+            **/target/*.jar
 
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
           cache: maven
-
-      - name: Run unit tests
-        run: mvn -B test -Dtest='!RunCucumberTest' -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false
-
-      - name: Upload unit test reports
+      - name: Execute JUnit Tests
+        run: |
+          mvn \
+            -B \
+            test \
+            -Dtest='!RunCucumberTest' \
+            -DfailIfNoTests=false \
+            -Dsurefire.failIfNoSpecifiedTests=false
+      - name: Upload Unit Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -79,24 +96,24 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
           cache: maven
-
-      - name: Run Cucumber tests
-        run: mvn -B test -Dtest='RunCucumberTest' -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false
-
-      - name: Upload Cucumber test reports
+      - name: Execute Cucumber Tests
+        run: |
+          mvn \
+            -B \
+            test \
+            -Dtest='RunCucumberTest' \
+            -DfailIfNoTests=false \
+            -Dsurefire.failIfNoSpecifiedTests=false
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: cucumber-test-reports
+          name: cucumber-reports
           path: '**/target/surefire-reports/**'
 
   jacoco:
@@ -109,149 +126,203 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - run: mvn -B jacoco:prepare-agent test jacoco:report
+          cache: maven
+      - name: Generate Coverage
+        run: |
+          mvn \
+            -B \
+            jacoco:prepare-agent \
+            test \
+            jacoco:report
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-report
+          path: |
+            **/target/site/jacoco/**
 
-  # ---------------------------------------------------------
-  # 3) PARALLEL SAST JOBS (all depend on tests)
-  # ---------------------------------------------------------
+  ###############################################################
+  # PARTIE 2 — TOUS LES OUTILS SAST
+  ###############################################################
+
   gitleaks:
     name: Secret Scanning (Gitleaks)
-    runs-on: ubuntu-latest
-    needs: [unit-tests, cucumber-tests, jacoco]
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # 🔥 obligatoire pour éviter l’erreur "unknown revision"
-
-      - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        with:
-          # 🔥 On laisse Gitleaks gérer le diff PR automatiquement
-          # Pas de "args", car l'action ne supporte pas ce paramètre
-          config-path: ""   # utilise la config par défaut
-
-      - if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gitleaks-results
-          path: results.sarif
-
-  dependency-check:
-    name: Dependency-Check (OWASP Dependency-Check)
-    runs-on: ubuntu-latest
-    needs: [unit-tests, cucumber-tests, jacoco]
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-          cache: maven
-
-      - name: Cache OWASP Dependency-Check data
-        uses: actions/cache@v4
-        with:
-          path: odc-data
-          key: ${{ runner.os }}-odc-data
-          restore-keys: ${{ runner.os }}-odc-data
-
-      - name: Run OWASP Dependency-Check (aggregate report)
-        run: mvn -B org.owasp:dependency-check-maven:aggregate
-
-      - name: Upload OWASP Dependency-Check Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: dependency-check-reports
-          path: target/dependency-check-report.*
-
-  spotbugs:
-    name: SpotBugs
-    runs-on: ubuntu-latest
-    needs: [ unit-tests, cucumber-tests, jacoco ]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-          cache: maven
-      - name: Install project dependencies
-        run: mvn -B clean install -DskipTests
-      - name: Run SpotBugs
-        run: mvn -B spotbugs:spotbugs
-
-  pmd:
-    name: PMD Analysis
-    runs-on: ubuntu-latest
-    needs: [ unit-tests, cucumber-tests, jacoco ]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-          cache: maven
-      - name: Install project dependencies
-        run: mvn -B clean install -DskipTests
-      - name: Run PMD
-        run: mvn -B org.apache.maven.plugins:maven-pmd-plugin:pmd
-
-  checkstyle:
-    name: Checkstyle
-    runs-on: ubuntu-latest
-    needs: [ unit-tests, cucumber-tests, jacoco ]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-          cache: maven
-      - name: Install project dependencies
-        run: mvn -B clean install -DskipTests
-      - name: Run Checkstyle
-        run: mvn -B org.apache.maven.plugins:maven-checkstyle-plugin:checkstyle
-
-  pitest:
-    name: Mutation Testing (PITest)
-    runs-on: ubuntu-latest
-    needs: [unit-tests, cucumber-tests, jacoco]
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-          cache: maven
-
-      - name: Run PITest mutation coverage
-        run: mvn -B clean test-compile org.pitest:pitest-maven:mutationCoverage
-
-      - name: Upload PITest Mutation Reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pitest-reports
-          path: '**/target/pit-reports/**'
-
-  # ---------------------------------------------------------
-  # 4) SONARQUBE (must wait for ALL SAST jobs)
-  # ---------------------------------------------------------
-  sonar:
-    name: Gating (SonarQube Analysis)
     runs-on: ubuntu-latest
     needs:
       - unit-tests
       - cucumber-tests
       - jacoco
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+
+      - name: Upload Gitleaks Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: results.sarif
+
+  dependency-check:
+    name: OWASP Dependency-Check
+    runs-on: ubuntu-latest
+    needs:
+      - unit-tests
+      - cucumber-tests
+      - jacoco
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+      - name: Cache Dependency-Check Database
+        uses: actions/cache@v4
+        with:
+          path: ~/.dependency-check
+          key: dependency-check-${{ runner.os }}
+          restore-keys: |
+            dependency-check-
+      - name: Run Dependency Check
+        run: |
+          mvn \
+            -B \
+            org.owasp:dependency-check-maven:aggregate \
+            -DnvdApiKey=${{ secrets.NVD_API_KEY }}
+      - name: Upload Dependency Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: |
+            **/target/dependency-check-report.*
+
+  spotbugs:
+    name: SpotBugs
+    runs-on: ubuntu-latest
+    needs:
+      - unit-tests
+      - cucumber-tests
+      - jacoco
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+      - name: Run SpotBugs
+        run: |
+          mvn \
+            -B \
+            verify \
+            spotbugs:spotbugs
+      - name: Upload SpotBugs Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotbugs-report
+          path: |
+            **/target/spotbugsXml.xml
+            **/target/site/spotbugs.*
+
+  pmd:
+    name: PMD Analysis
+    runs-on: ubuntu-latest
+    needs:
+      - unit-tests
+      - cucumber-tests
+      - jacoco
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+      - name: Run PMD
+        run: |
+          mvn \
+            -B \
+            pmd:pmd
+      - name: Upload PMD Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pmd-report
+          path: |
+            **/target/site/pmd.*
+
+  checkstyle:
+    name: Checkstyle
+    runs-on: ubuntu-latest
+    needs:
+      - unit-tests
+      - cucumber-tests
+      - jacoco
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+      - name: Run Checkstyle
+        run: |
+          mvn \
+            -B \
+            checkstyle:checkstyle
+
+      - name: Upload Checkstyle Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkstyle-report
+          path: |
+            **/target/checkstyle-result.xml
+            **/target/site/checkstyle.*
+
+  pitest:
+    name: PIT Mutation Testing
+    runs-on: ubuntu-latest
+    needs:
+      - unit-tests
+      - cucumber-tests
+      - jacoco
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+      - name: Execute PIT Mutation Testing
+        run: |
+          mvn \
+            -B \
+            clean \
+            test-compile \
+            org.pitest:pitest-maven:mutationCoverage
+      - name: Upload PIT Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pit-report
+          path: |
+            **/target/pit-reports/**
+
+  ###############################################################
+  # PARTIE 3 — SONAR + DOCKER + DEPLOIEMENT + NEWMAN
+  ###############################################################
+
+  sonar:
+    name: SonarQube Quality Gate
+    runs-on: ubuntu-latest
+    needs:
       - gitleaks
       - dependency-check
       - spotbugs
@@ -262,49 +333,283 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
           cache: maven
-
       - uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
-
-      - run: mvn -B clean package -DskipTests
-
-      - uses: actions/download-artifact@v4
+      - name: Rebuild avec couverture
+        run: |
+          mvn \
+            -B \
+            clean \
+            package \
+            jacoco:report \
+            -DskipTests=false
+      - name: Récupérer le rapport Dependency-Check
+        uses: actions/download-artifact@v4
         with:
-          name: dependency-check-reports
+          name: dependency-check-report
           path: target
-
-      - uses: actions/download-artifact@v4
+      - name: Récupérer le rapport PIT
+        uses: actions/download-artifact@v4
         with:
-          name: pitest-reports
+          name: pit-report
           path: .
+      - name: Analyse SonarQube
+        run: |
+          mvn \
+            -B \
+            sonar:sonar \
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
+            -Dsonar.projectName="${{ secrets.SONAR_PROJECT_NAME }}" \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+            -Dsonar.qualitygate.wait=true \
+            -Dsonar.qualitygate.timeout=300
 
-      - run: >
-          mvn -B sonar:sonar
-          -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-          -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
-          -Dsonar.projectName="${{ secrets.SONAR_PROJECT_NAME }}"
-          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-          -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }}
-          -Dsonar.qualitygate.wait=true
-          -Dsonar.qualitygate.timeout=300
-
-  # ---------------------------------------------------------
-  # 5) DOCKER (only if SonarQube passes)
-  # ---------------------------------------------------------
   docker:
     name: Build Docker Image
     runs-on: ubuntu-latest
     needs: sonar
     if: needs.sonar.result == 'success'
-
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t digibank-app:ci .
+      - name: Récupérer le jar compilé (Partie 1)
+        uses: actions/download-artifact@v4
+        with:
+          name: digibank-build
+          path: target
+      - name: Construire l'image Docker
+        run: |
+          docker build -t digibank-app:ci .
+      - name: Sauvegarder l'image en tar
+        run: |
+          docker save digibank-app:ci -o digibank-image.tar
+      - name: Upload de l'image Docker
+        uses: actions/upload-artifact@v4
+        with:
+          name: digibank-docker-image
+          path: digibank-image.tar
+
+  deploy-app:
+    name: Deploy DigiBank (Runtime)
+    runs-on: ubuntu-latest
+    needs: docker
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: digibank
+          POSTGRES_USER: digibank
+          POSTGRES_PASSWORD: digibank
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Récupérer l'image Docker
+        uses: actions/download-artifact@v4
+        with:
+          name: digibank-docker-image
+      - name: Charger l'image Docker
+        run: |
+          docker load -i digibank-image.tar
+      - name: Démarrer le conteneur DigiBank
+        run: |
+          docker run -d \
+            --name digibank-app \
+            --network host \
+            -e SPRING_PROFILES_ACTIVE=qa \
+            -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/digibank \
+            -e SPRING_DATASOURCE_USERNAME=digibank \
+            -e SPRING_DATASOURCE_PASSWORD=digibank \
+            digibank-app:ci
+      - name: Attendre /actuator/health
+        run: |
+          for i in {1..30}; do
+            if curl -sf http://localhost:8080/actuator/health; then
+              echo "Application prête"
+              exit 0
+            fi
+            echo "En attente du démarrage..."
+            sleep 5
+          done
+          echo "L'application n'a pas démarré à temps"
+          docker logs digibank-app
+          exit 1
+
+  newman:
+    name: API Tests (Newman)
+    runs-on: ubuntu-latest
+    needs: deploy-app
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: digibank
+          POSTGRES_USER: digibank
+          POSTGRES_PASSWORD: digibank
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+      - name: Récupérer l'image Docker
+        uses: actions/download-artifact@v4
+        with:
+          name: digibank-docker-image
+      - name: Charger l'image Docker
+        run: docker load -i digibank-image.tar
+      - name: Démarrer le conteneur DigiBank
+        run: |
+          docker run -d \
+            --name digibank-app \
+            --network host \
+            -e SPRING_PROFILES_ACTIVE=qa \
+            -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/digibank \
+            -e SPRING_DATASOURCE_USERNAME=digibank \
+            -e SPRING_DATASOURCE_PASSWORD=digibank \
+            digibank-app:ci
+      - name: Attendre /actuator/health
+        run: |
+          for i in {1..30}; do
+            if curl -sf http://localhost:8080/actuator/health; then
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
+      - name: Installer Newman
+        run: |
+          npm install -g newman newman-reporter-htmlextra
+      - name: Exécuter la collection Newman
+        run: |
+          newman run postman/DigiBank.postman_collection.json \
+            --environment postman/DigiBank.postman_environment.json \
+            --reporters cli,htmlextra,json \
+            --reporter-htmlextra-export newman-report.html \
+            --reporter-json-export newman-report.json
+      - name: Upload des rapports Newman
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-reports
+          path: |
+            newman-report.html
+            newman-report.json
+      - name: Arrêter le conteneur
+        if: always()
+        run: docker stop digibank-app || true
+
+  ###############################################################
+  # PARTIE 4 — OWASP ZAP + REPORTING + ARTIFACTS
+  ###############################################################
+
+  owasp-zap:
+    name: DAST (OWASP ZAP)
+    runs-on: ubuntu-latest
+    needs: newman
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: digibank
+          POSTGRES_USER: digibank
+          POSTGRES_PASSWORD: digibank
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+      - name: Récupérer l'image Docker
+        uses: actions/download-artifact@v4
+        with:
+          name: digibank-docker-image
+      - name: Charger l'image Docker
+        run: docker load -i digibank-image.tar
+      - name: Démarrer le conteneur DigiBank
+        run: |
+          docker run -d \
+            --name digibank-app \
+            --network host \
+            -e SPRING_PROFILES_ACTIVE=qa \
+            -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/digibank \
+            -e SPRING_DATASOURCE_USERNAME=digibank \
+            -e SPRING_DATASOURCE_PASSWORD=digibank \
+            digibank-app:ci
+      - name: Attendre /actuator/health
+        run: |
+          for i in {1..30}; do
+            if curl -sf http://localhost:8080/actuator/health; then
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
+      - name: ZAP Baseline Scan (Passive)
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'http://localhost:8080'
+          cmd_options: '-a'
+          allow_issue_writing: false
+      - name: ZAP Full Scan (Active + API + OWASP Top 10)
+        uses: zaproxy/action-full-scan@v0.10.0
+        with:
+          target: 'http://localhost:8080'
+          cmd_options: '-a -j -T 10'
+          allow_issue_writing: false
+      - name: Upload des rapports ZAP
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-zap-reports
+          path: |
+            report_html.html
+            report_json.json
+            report_xml.xml
+            report_sarif.json
+      - name: Arrêter le conteneur
+        if: always()
+        run: docker stop digibank-app || true
+
+  publish-dast-reports:
+    name: Publish Reports & Build Status
+    runs-on: ubuntu-latest
+    needs:
+      - sonar
+      - dependency-check
+      - newman
+      - owasp-zap
+    if: always()
+    steps:
+      - name: Télécharger tous les artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-reports
+      - name: Lister les rapports collectés
+        run: |
+          echo "Rapports collectés :"
+          find all-reports -type f
+      - name: Upload du bundle consolidé
+        uses: actions/upload-artifact@v4
+        with:
+          name: digibank-full-security-report
+          path: all-reports
+      - name: Statut final du build
+        run: |
+          if [ "${{ needs.sonar.result }}" == "success" ] && \
+             [ "${{ needs.newman.result }}" == "success" ] && \
+             [ "${{ needs.owasp-zap.result }}" == "success" ]; then
+            echo "BUILD STATUS: SUCCESS"
+          else
+            echo "BUILD STATUS: FAILURE"
+            exit 1
+          fi
