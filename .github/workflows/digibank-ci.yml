@@ -59,7 +59,7 @@ jobs:
             package \
             -DskipTests
       - name: Upload compiled application
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: digibank-build
           path: digibank-web/target/digibank-web-*.jar
@@ -85,7 +85,7 @@ jobs:
             -Dsurefire.failIfNoSpecifiedTests=false
       - name: Upload Unit Reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: unit-test-reports
           path: '**/target/surefire-reports/**'
@@ -109,7 +109,7 @@ jobs:
             -Dtest='RunCucumberTest' \
             -DfailIfNoTests=false \
             -Dsurefire.failIfNoSpecifiedTests=false
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: cucumber-reports
@@ -133,7 +133,7 @@ jobs:
             jacoco:prepare-agent \
             test \
             jacoco:report
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: jacoco-report
@@ -160,7 +160,7 @@ jobs:
 
       - name: Upload Gitleaks Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gitleaks-report
           path: results.sarif
@@ -200,7 +200,7 @@ jobs:
             -DnvdApiKey=${{ secrets.NVD_API_KEY }}
       - name: Upload Dependency Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dependency-check-report
           path: |
@@ -228,7 +228,7 @@ jobs:
             spotbugs:spotbugs
       - name: Upload SpotBugs Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: spotbugs-report
           path: |
@@ -257,7 +257,7 @@ jobs:
             pmd:pmd
       - name: Upload PMD Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pmd-report
           path: |
@@ -286,7 +286,7 @@ jobs:
 
       - name: Upload Checkstyle Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: checkstyle-report
           path: |
@@ -316,7 +316,7 @@ jobs:
             org.pitest:pitest-maven:mutationCoverage
       - name: Upload PIT Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pit-report
           path: |
@@ -399,7 +399,7 @@ jobs:
         run: |
           docker save digibank-app:ci -o digibank-image.tar
       - name: Upload de l'image Docker
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: digibank-docker-image
           path: digibank-image.tar
@@ -507,7 +507,7 @@ jobs:
             --reporter-json-export newman-report.json
       - name: Upload des rapports Newman
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: newman-reports
           path: |
@@ -579,7 +579,7 @@ jobs:
           allow_issue_writing: false
       - name: Upload des rapports ZAP
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: owasp-zap-reports
           path: |
@@ -610,7 +610,7 @@ jobs:
           echo "Rapports collectés :"
           find all-reports -type f
       - name: Upload du bundle consolidé
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: digibank-full-security-report
           path: all-reports
