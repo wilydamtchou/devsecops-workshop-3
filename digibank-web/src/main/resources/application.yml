@@ -47,3 +47,12 @@ error:
   include-message: never
   include-binding-errors: never
   include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
