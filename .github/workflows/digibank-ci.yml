@@ -358,12 +358,12 @@ jobs:
             jacoco:report \
             -DskipTests=false
       - name: Récupérer le rapport Dependency-Check
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: dependency-check-report
           path: target
       - name: Récupérer le rapport PIT
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: pit-report
           path: .
@@ -388,7 +388,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Récupérer le jar compilé (Partie 1)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: digibank-build
           path: digibank-web/target
@@ -425,7 +425,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Récupérer l'image Docker
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: digibank-docker-image
       - name: Charger l'image Docker
@@ -471,7 +471,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Récupérer l'image Docker
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: digibank-docker-image
       - name: Charger l'image Docker
@@ -537,7 +537,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Récupérer l'image Docker
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: digibank-docker-image
       - name: Charger l'image Docker
@@ -602,7 +602,7 @@ jobs:
     if: always()
     steps:
       - name: Télécharger tous les artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: all-reports
       - name: Lister les rapports collectés
