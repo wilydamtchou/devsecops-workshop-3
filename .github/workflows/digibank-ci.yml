@@ -47,7 +47,7 @@ jobs:
           java-version: 21
           cache: maven
       - name: Cache local Maven repository
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.m2/repository
           key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
@@ -183,7 +183,7 @@ jobs:
         id: date
         run: echo "date=$(date +'%Y-W%U')" >> "$GITHUB_OUTPUT"
       - name: Cache Dependency-Check Database
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: odc-data
           key: dependency-check-db-${{ runner.os }}-${{ steps.date.outputs.date }}
@@ -345,7 +345,7 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: maven
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
