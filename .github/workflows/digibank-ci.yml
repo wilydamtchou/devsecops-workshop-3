@@ -571,7 +571,7 @@ jobs:
           allow_issue_writing: false
       - name: ZAP Full Scan (Active + API + OWASP Top 10)
         id: zap_full
-        uses: zaproxy/action-full-scan@v0.10.0
+        uses: zaproxy/action-full-scan@v0.13.0
         continue-on-error: true
         with:
           target: 'http://localhost:8080'
