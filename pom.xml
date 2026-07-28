@@ -55,7 +55,7 @@
     <pmd.maven.plugin.version>3.21.0</pmd.maven.plugin.version>
     <checkstyle.maven.plugin.version>3.5.0</checkstyle.maven.plugin.version>
 
-    <jackson-bom.version>2.18.9</jackson-bom.version> <!-- ou plus récent -->
+    <jackson-bom.version>2.22.1</jackson-bom.version> <!-- ou plus récent -->
     <postgresql.version>42.7.13</postgresql.version>
     <commons-lang3.version>3.18.0</commons-lang3.version>
     <swagger-ui.version>5.32.7</swagger-ui.version>
