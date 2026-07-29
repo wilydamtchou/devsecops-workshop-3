@@ -1,8 +1,3 @@
-Voici le README complet, structuré en **Workshop 3** et **Workshop 4**, avec les commandes, objectifs, checklists, vérifications et preuves attendues, et avec l’intégration de Trivy dans la logique CI/CD.[1][2]
-
-## README final
-
-```md
 # DigiBank - Workshop 3 and Workshop 4 README
 
 ## Overview
