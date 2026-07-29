@@ -55,6 +55,11 @@
       **/*Application.java,
       **/config/**/*.java
     </sonar.coverage.exclusions>
+    <sonar.cpd.exclusions>
+      **/dto/**/*.java,
+      **/entity/**/*.java,
+      **/entities/**/*.java
+    </sonar.cpd.exclusions>
 
     <dependency-check.version>10.0.4</dependency-check.version>
     <pitest.version>1.17.0</pitest.version>
