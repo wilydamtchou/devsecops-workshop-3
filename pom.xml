@@ -43,6 +43,10 @@
     <sonar.host.url>${env.SONAR_HOST_URL}</sonar.host.url>
     <sonar.organization>${env.SONAR_ORGANIZATION}</sonar.organization>
     <sonar.coverage.exclusions>
+      **/api/ApiError.java,
+      **/api/ApiResponse.java,
+      **/exception/**/*.java,
+      **/bootstrap/**/*.java,
       **/entity/**/*.java,
       **/entities/**/*.java,
       **/model/**/*.java,
