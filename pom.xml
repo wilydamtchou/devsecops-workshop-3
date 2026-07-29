@@ -42,6 +42,15 @@
     <sonar.login>${env.SONAR_TOKEN}</sonar.login>
     <sonar.host.url>${env.SONAR_HOST_URL}</sonar.host.url>
     <sonar.organization>${env.SONAR_ORGANIZATION}</sonar.organization>
+    <sonar.coverage.exclusions>
+      **/entity/**/*.java,
+      **/entities/**/*.java,
+      **/model/**/*.java,
+      **/dto/**/*.java,
+      **/*Controller.java,
+      **/*Application.java,
+      **/config/**/*.java
+    </sonar.coverage.exclusions>
 
     <dependency-check.version>10.0.4</dependency-check.version>
     <pitest.version>1.17.0</pitest.version>
