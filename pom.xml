@@ -62,7 +62,7 @@
     </sonar.cpd.exclusions>
 
     <dependency-check.version>10.0.4</dependency-check.version>
-    <pitest.version>1.17.0</pitest.version>
+    <pitest.version>1.25.8</pitest.version>
     <pitest.junit5.plugin.version>1.2.1</pitest.junit5.plugin.version>
     <surefire.version>3.2.5</surefire.version>
     <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
