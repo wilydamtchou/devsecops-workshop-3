@@ -68,7 +68,7 @@
     <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
 
     <!-- JaCoCo / SpotBugs / PMD / Checkstyle versions -->
-    <jacoco.version>0.8.12</jacoco.version>
+    <jacoco.version>0.8.15</jacoco.version>
     <spotbugs.maven.plugin.version>4.8.6.4</spotbugs.maven.plugin.version>
     <pmd.maven.plugin.version>3.21.0</pmd.maven.plugin.version>
     <checkstyle.maven.plugin.version>3.5.0</checkstyle.maven.plugin.version>
