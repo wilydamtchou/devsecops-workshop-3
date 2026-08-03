@@ -70,7 +70,7 @@
     <!-- JaCoCo / SpotBugs / PMD / Checkstyle versions -->
     <jacoco.version>0.8.12</jacoco.version>
     <spotbugs.maven.plugin.version>4.8.6.4</spotbugs.maven.plugin.version>
-    <pmd.maven.plugin.version>3.21.0</pmd.maven.plugin.version>
+    <pmd.maven.plugin.version>3.28.0</pmd.maven.plugin.version>
     <checkstyle.maven.plugin.version>3.5.0</checkstyle.maven.plugin.version>
 
     <jackson-bom.version>2.18.9</jackson-bom.version> <!-- ou plus récent -->
